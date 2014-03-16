@@ -1,0 +1,52 @@
+Owners: Jason Clark, Arturo Griffini, Tim Hausler, Lucas Sloan
+
+This software calculates the profits that a
+trading strategy would have accrued on historical data and
+uses that to tune the strategy's parameters for better performance.
+
+The user of the file is responsible for implementing one or more OpenCL
+kernels representing his/her strategy.  If the user's strategy involves
+multiple indicators then he/she can create an OpenCL kernel for each indicator
+or one OpenCL kernel that covers all indicators.  The signature of a kernel 
+looks like the following example signature for bollinger bands:
+
+__kernel void bollinger(__global double * out,
+ 			__global double * price_array,
+ 			int out_size,
+ 			int price_size,
+ 			double weight,
+ 			double p,
+ 			double upper_std,
+ 			double lower_std)
+
+Note how the out array comes first, followed by all other data 
+arrays (in this case only one), followed by the length of each 
+respective array, followed by various parameters.  Both the arrays
+and the parameters are doubles.
+
+The user must also provide a configuration file for the program. This
+config file will describe the kernels used and key program parameters.
+Config files look like this:
+
+fitness,3,2,one_min_ten_years.csv,cPrice,one_min_ten_years.csv,hPrice,one_min_ten_years.csv,lPrice,3,300,3,300
+first,0,0
+bollinger,3,4,one_min_ten_years.csv,cPrice,one_min_ten_years.csv,hPrice,one_min_ten_years.csv,lPrice,0,1,10,200,0.5,4,0.5,4
+
+The first two lines should be the same for every config file. The next lines describe each kernel(in this case
+there is only one), starting: "kernel_name,number_of_input_data_arrays(do not include the out array)
+,number_of_double_variables,...".  After that comes the files of the data arrays and their names in the 
+files, in the order that you want the kernel to receive them in the arguments, followed by the ranges for 
+each of the double variables you want the kernel to be passed (these ranges are ranges for which the 
+genetic algorithm is free to tune).  These ranges must be in the respective order of the kernel signature.
+
+You can run the program by compiling with 'make all' and passing it a valid config file:
+
+./wrapper myconfig
+
+The makefile assumes you have openCL installed as per the hive machines in /usr/local/cuda-4.2
+
+For a demo, try:
+
+./wrapper 1wkbollinger.config
+
+
